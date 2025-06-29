@@ -4,7 +4,7 @@
   "description": "AI-driven Cloudflare Workers project with self-correcting environment",
   "main": "src/index.ts",
   "scripts": {
-    "dev": "wrangler dev src/index.ts",
+    "dev": "vite",
     "build": "vite build",
     "deploy": "wrangler deploy",
     "test": "vitest run",
@@ -20,7 +20,13 @@
     "typecheck": "tsc --noEmit",
     "prepare": "husky"
   },
-  "keywords": ["ai-driven", "cloudflare-workers", "typescript", "vite", "playwright"],
+  "keywords": [
+    "ai-driven",
+    "cloudflare-workers",
+    "typescript",
+    "vite",
+    "playwright"
+  ],
   "author": "",
   "license": "MIT",
   "lint-staged": {
@@ -56,5 +62,8 @@
     "vite": "^7.0.0",
     "vitest": "^3.2.4",
     "wrangler": "^4.20.5"
+  },
+  "dependencies": {
+    "pixi.js": "^8.10.2"
   }
 }
