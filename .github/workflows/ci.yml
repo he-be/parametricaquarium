@@ -58,17 +58,26 @@ jobs:
         if: github.event_name == 'pull_request'
         uses: davelosert/vitest-coverage-report-action@v2
 
-      # 9. Playwrightブラウザのインストール
-      - name: Install Playwright browsers
-        run: npx playwright install chromium
+      # 9. Playwrightのキャッシュを設定
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
 
-      # 10. E2Eテストを実行する（ヘッドレスモード）
+      # 10. Playwrightブラウザのインストール
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      # 11. E2Eテストを実行する（ヘッドレスモード）
       - name: Run E2E tests
         run: npm run test:e2e
         env:
           CI: true
 
-      # 11. プロジェクトのビルド
+      # 12. プロジェクトのビルド
       - name: Build project
         run: npm run build
 
