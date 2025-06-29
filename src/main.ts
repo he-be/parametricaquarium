@@ -32,6 +32,15 @@ function vec2_normalize(v: Vector2): Vector2 {
     const len = vec2_len(v);
     return len > 0 ? { x: v.x / len, y: v.y / len } : { x: 0, y: 0 };
 }
+// Helper for rotating a vector by an angle
+function vec2_rotate(v: Vector2, angle: number): Vector2 {
+    const cos = Math.cos(angle);
+    const sin = Math.sin(angle);
+    return {
+        x: v.x * cos - v.y * sin,
+        y: v.x * sin + v.y * cos
+    };
+}
 
 // 魚クラス
 class Fish {
@@ -40,6 +49,9 @@ class Fish {
     numNodes: number = 10; // 魚のノード数
     nodeSpacing: number = 10; // ノード間の間隔
     velocity: Vector2 = { x: 1, y: 0 }; // 魚の移動速度 (仮)
+    waveAmplitude: number = 0.5; // 波の振幅 (ラジアン)
+    waveFrequency: number = 0.5; // 波の周波数
+    waveSpeed: number = 0.005; // 波の速度
 
     constructor(x: number, y: number) {
         this.graphics = new Graphics();
@@ -65,9 +77,10 @@ class Fish {
         this.nodes[0].position.x += this.velocity.x * dt * 60; // Scale by 60 for reasonable speed
         this.nodes[0].position.y += this.velocity.y * dt * 60;
 
-        // 2. Constraint Resolution (Distance Constraints)
+        // 2. Constraint Resolution (Distance and Angle Constraints)
         const numIterations = 5; // Number of iterations for constraint solving
         for (let iter = 0; iter < numIterations; iter++) {
+            // Apply Distance Constraints
             for (let i = 0; i < this.numNodes - 1; i++) {
                 const node1 = this.nodes[i];
                 const node2 = this.nodes[i + 1];
@@ -75,13 +88,54 @@ class Fish {
                 const currentDist = vec2_len(vec2_sub(node1.position, node2.position));
                 const correction = currentDist - this.nodeSpacing;
 
-                // Direction vector from node2 to node1
                 const dir = vec2_normalize(vec2_sub(node1.position, node2.position));
-
-                // Apply correction to node2 to maintain distance from node1
                 const correctionVec = vec2_scale(dir, correction);
-                node2.position.x += correctionVec.x;
-                node2.position.y += correctionVec.y;
+
+                // Apply correction to both nodes, weighted by inverse mass (or simply half for equal mass)
+                node1.position.x -= correctionVec.x * 0.5;
+                node1.position.y -= correctionVec.y * 0.5;
+                node2.position.x += correctionVec.x * 0.5;
+                node2.position.y += correctionVec.y * 0.5;
+            }
+
+            // Apply Angle Constraints
+            for (let i = 1; i < this.numNodes - 1; i++) {
+                const nodeA = this.nodes[i - 1]; // Previous node
+                const nodeB = this.nodes[i];     // Current node (pivot)
+                const nodeC = this.nodes[i + 1]; // Next node
+
+                // Vectors forming the angle
+                const vecBA = vec2_sub(nodeA.position, nodeB.position);
+                const vecBC = vec2_sub(nodeC.position, nodeB.position);
+
+                const currentAngle = Math.atan2(vecBA.y, vecBA.x) - Math.atan2(vecBC.y, vecBC.x);
+
+                // Normalize angle to be within -PI to PI
+                let normalizedCurrentAngle = currentAngle;
+                if (normalizedCurrentAngle > Math.PI) normalizedCurrentAngle -= 2 * Math.PI;
+                if (normalizedCurrentAngle < -Math.PI) normalizedCurrentAngle += 2 * Math.PI;
+
+                // Target angle based on propagating wave
+                // A * sin(k * i - ω * t)
+                const targetAngle = this.waveAmplitude * Math.sin(
+                    i * this.waveFrequency + app.ticker.lastTime * this.waveSpeed
+                );
+
+                const angleCorrection = targetAngle - normalizedCurrentAngle;
+
+                // Apply correction by rotating nodeA and nodeC around nodeB
+                // This is a simplified approach. For a more robust PBD, you'd distribute
+                // the correction based on inverse masses and apply it to all three nodes.
+                // Here, we'll rotate nodeA and nodeC by half the correction angle.
+
+                const rotatedVecBA = vec2_rotate(vecBA, angleCorrection * 0.5);
+                const rotatedVecBC = vec2_rotate(vecBC, -angleCorrection * 0.5); // Rotate in opposite direction
+
+                nodeA.position.x = nodeB.position.x + rotatedVecBA.x;
+                nodeA.position.y = nodeB.position.y + rotatedVecBA.y;
+
+                nodeC.position.x = nodeB.position.x + rotatedVecBC.x;
+                nodeC.position.y = nodeB.position.y + rotatedVecBC.y;
             }
         }
 
@@ -89,6 +143,14 @@ class Fish {
         // For PBD, velocity is often derived from (current_pos - prev_pos)
         // For now, we'll just let the positions be updated by constraints.
         // The prevPosition is already set for the next frame's prediction.
+        // Also, add boundary checks to keep the fish on screen.
+        for (const node of this.nodes) {
+            // Wrap around screen boundaries
+            if (node.position.x < 0) node.position.x = app.screen.width;
+            if (node.position.x > app.screen.width) node.position.x = 0;
+            if (node.position.y < 0) node.position.y = app.screen.height;
+            if (node.position.y > app.screen.height) node.position.y = 0;
+        }
     }
 
     draw() {
