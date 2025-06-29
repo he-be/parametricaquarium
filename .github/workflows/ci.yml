@@ -69,7 +69,7 @@ jobs:
 
       # 10. Playwrightブラウザのインストール
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install chromium
 
       # 11. E2Eテストを実行する（ヘッドレスモード）
       - name: Run E2E tests
