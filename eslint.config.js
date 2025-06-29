@@ -7,7 +7,7 @@ export default [
   pluginJs.configs.recommended,
 
   // TypeScript ESLint の推奨設定
-  ...tseslint.configs.recommended,
+  tseslint.configs.recommended,
 
   {
     languageOptions: {
