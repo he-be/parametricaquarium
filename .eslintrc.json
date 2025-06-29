@@ -13,7 +13,7 @@
   "parserOptions": {
     "ecmaVersion": 2022,
     "sourceType": "module",
-    "project": "./tsconfig.json"
+    "project": "/home/mh/dev/parametricaquarium/tsconfig.json"
   },
   "rules": {
     "@typescript-eslint/explicit-function-return-type": "error",
