@@ -9,7 +9,7 @@ interface Vector2 {
 // 骨格ノード
 interface Node {
     position: Vector2;
-    prevPosition: Vector2; // For PBD, though not used in this step
+    prevPosition: Vector2;
 }
 
 // 波紋オブジェクト
@@ -23,6 +23,16 @@ interface Ripple {
     color: number;
 }
 
+// ヘルパー関数: ベクトル演算
+function vec2_sub(a: Vector2, b: Vector2): Vector2 { return { x: a.x - b.x, y: a.y - b.y }; }
+function vec2_add(a: Vector2, b: Vector2): Vector2 { return { x: a.x + b.x, y: a.y + b.y }; }
+function vec2_scale(v: Vector2, s: number): Vector2 { return { x: v.x * s, y: v.y * s }; }
+function vec2_len(v: Vector2): number { return Math.sqrt(v.x * v.x + v.y * v.y); }
+function vec2_normalize(v: Vector2): Vector2 {
+    const len = vec2_len(v);
+    return len > 0 ? { x: v.x / len, y: v.y / len } : { x: 0, y: 0 };
+}
+
 // 魚クラス
 class Fish {
     nodes: Node[] = [];
@@ -30,9 +40,6 @@ class Fish {
     numNodes: number = 10; // 魚のノード数
     nodeSpacing: number = 10; // ノード間の間隔
     velocity: Vector2 = { x: 1, y: 0 }; // 魚の移動速度 (仮)
-    waveAmplitude: number = 10; // 波の振幅
-    waveFrequency: number = 0.1; // 波の周波数
-    waveSpeed: number = 0.05; // 波の速度
 
     constructor(x: number, y: number) {
         this.graphics = new Graphics();
@@ -46,32 +53,42 @@ class Fish {
     }
 
     update(deltaTime: number) {
-        // 魚の頭部を移動させる
-        this.nodes[0].position.x += this.velocity.x * deltaTime;
-        this.nodes[0].position.y += this.velocity.y * deltaTime;
+        const dt = deltaTime / 1000; // Convert to seconds for physics calculations
 
-        // 進行波モデルに基づいて各ノードの位置を更新 (簡易版)
-        // PBDは後で実装
-        for (let i = 1; i < this.numNodes; i++) {
-            const prevNode = this.nodes[i - 1];
-            const currentNode = this.nodes[i];
-
-            // ノード間の距離を維持
-            const dx = prevNode.position.x - currentNode.position.x;
-            const dy = prevNode.position.y - currentNode.position.y;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            const diffX = (dist - this.nodeSpacing) * (dx / dist);
-            const diffY = (dist - this.nodeSpacing) * (dy / dist);
-
-            currentNode.position.x += diffX;
-            currentNode.position.y += diffY;
-
-            // 波の動きを追加
-            const waveOffset = Math.sin(i * this.waveFrequency + app.ticker.lastTime * this.waveSpeed) * this.waveAmplitude;
-            // 魚の進行方向に対して垂直に波を適用
-            // 現状はX軸方向の魚なのでY軸に波を適用
-            currentNode.position.y += waveOffset;
+        // 1. Prediction and External Forces
+        for (const node of this.nodes) {
+            node.prevPosition.x = node.position.x;
+            node.prevPosition.y = node.position.y;
         }
+
+        // Simple forward movement for the head
+        this.nodes[0].position.x += this.velocity.x * dt * 60; // Scale by 60 for reasonable speed
+        this.nodes[0].position.y += this.velocity.y * dt * 60;
+
+        // 2. Constraint Resolution (Distance Constraints)
+        const numIterations = 5; // Number of iterations for constraint solving
+        for (let iter = 0; iter < numIterations; iter++) {
+            for (let i = 0; i < this.numNodes - 1; i++) {
+                const node1 = this.nodes[i];
+                const node2 = this.nodes[i + 1];
+
+                const currentDist = vec2_len(vec2_sub(node1.position, node2.position));
+                const correction = currentDist - this.nodeSpacing;
+
+                // Direction vector from node2 to node1
+                const dir = vec2_normalize(vec2_sub(node1.position, node2.position));
+
+                // Apply correction to node2 to maintain distance from node1
+                const correctionVec = vec2_scale(dir, correction);
+                node2.position.x += correctionVec.x;
+                node2.position.y += correctionVec.y;
+            }
+        }
+
+        // 3. Update Velocity and Final Position (Implicit Euler-like update)
+        // For PBD, velocity is often derived from (current_pos - prev_pos)
+        // For now, we'll just let the positions be updated by constraints.
+        // The prevPosition is already set for the next frame's prediction.
     }
 
     draw() {
