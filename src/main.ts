@@ -29,6 +29,10 @@ class Fish {
     graphics: Graphics;
     numNodes: number = 10; // 魚のノード数
     nodeSpacing: number = 10; // ノード間の間隔
+    velocity: Vector2 = { x: 1, y: 0 }; // 魚の移動速度 (仮)
+    waveAmplitude: number = 10; // 波の振幅
+    waveFrequency: number = 0.1; // 波の周波数
+    waveSpeed: number = 0.05; // 波の速度
 
     constructor(x: number, y: number) {
         this.graphics = new Graphics();
@@ -41,6 +45,35 @@ class Fish {
         }
     }
 
+    update(deltaTime: number) {
+        // 魚の頭部を移動させる
+        this.nodes[0].position.x += this.velocity.x * deltaTime;
+        this.nodes[0].position.y += this.velocity.y * deltaTime;
+
+        // 進行波モデルに基づいて各ノードの位置を更新 (簡易版)
+        // PBDは後で実装
+        for (let i = 1; i < this.numNodes; i++) {
+            const prevNode = this.nodes[i - 1];
+            const currentNode = this.nodes[i];
+
+            // ノード間の距離を維持
+            const dx = prevNode.position.x - currentNode.position.x;
+            const dy = prevNode.position.y - currentNode.position.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            const diffX = (dist - this.nodeSpacing) * (dx / dist);
+            const diffY = (dist - this.nodeSpacing) * (dy / dist);
+
+            currentNode.position.x += diffX;
+            currentNode.position.y += diffY;
+
+            // 波の動きを追加
+            const waveOffset = Math.sin(i * this.waveFrequency + app.ticker.lastTime * this.waveSpeed) * this.waveAmplitude;
+            // 魚の進行方向に対して垂直に波を適用
+            // 現状はX軸方向の魚なのでY軸に波を適用
+            currentNode.position.y += waveOffset;
+        }
+    }
+
     draw() {
         this.graphics.clear();
         // 魚の形状を仮で描画 (長方形)
@@ -49,6 +82,7 @@ class Fish {
         const tail = this.nodes[this.nodes.length - 1].position;
         const bodyWidth = 20; // 仮の魚の幅
 
+        // 魚の本体を描画
         this.graphics.beginFill(0x00FF00); // 緑色で魚の本体 (仮)
         this.graphics.drawRect(tail.x, tail.y - bodyWidth / 2, head.x - tail.x, bodyWidth);
         this.graphics.endFill();
@@ -109,7 +143,7 @@ const fish = new Fish(app.screen.width / 2, app.screen.height / 2);
 app.stage.addChild(fish.graphics);
 
 // メインループでの波紋の更新と描画
-app.ticker.add((delta) => {
+app.ticker.add((deltaTime) => { // deltaをdeltaTimeに変更
     const currentTime = app.ticker.lastTime; // 現在の時間を取得
 
     for (let i = activeRipples.length - 1; i >= 0; i--) {
@@ -133,6 +167,7 @@ app.ticker.add((delta) => {
         ripple.graphics.drawCircle(ripple.origin.x, ripple.origin.y, currentRadius);
     }
 
-    // 魚の描画
+    // 魚の更新と描画
+    fish.update(deltaTime);
     fish.draw();
 });
