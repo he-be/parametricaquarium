@@ -2,13 +2,13 @@
   "parser": "@typescript-eslint/parser",
   "extends": [
     "eslint:recommended",
-    "@typescript-eslint/recommended",
-    "@typescript-eslint/recommended-requiring-type-checking"
+    "@typescript-eslint/recommended"
   ],
   "plugins": ["@typescript-eslint"],
   "env": {
     "node": true,
-    "es2022": true
+    "es2022": true,
+    "browser": true
   },
   "parserOptions": {
     "ecmaVersion": 2022,
