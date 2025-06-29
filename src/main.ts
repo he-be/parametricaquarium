@@ -25,7 +25,6 @@ interface Ripple {
 
 // ヘルパー関数: ベクトル演算
 function vec2_sub(a: Vector2, b: Vector2): Vector2 { return { x: a.x - b.x, y: a.y - b.y }; }
-function vec2_add(a: Vector2, b: Vector2): Vector2 { return { x: a.x + b.x, y: a.y + b.y }; }
 function vec2_scale(v: Vector2, s: number): Vector2 { return { x: v.x * s, y: v.y * s }; }
 function vec2_len(v: Vector2): number { return Math.sqrt(v.x * v.x + v.y * v.y); }
 function vec2_normalize(v: Vector2): Vector2 {
