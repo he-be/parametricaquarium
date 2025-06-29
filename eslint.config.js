@@ -13,8 +13,8 @@ export default [
       },
     },
   },
-  pluginJs.configs.recommended,
-  tseslint.configs.recommended,
+  ...pluginJs.configs.recommended,
+  ...tseslint.configs.recommended,
   {
     rules: {
       "@typescript-eslint/explicit-function-return-type": "error",
