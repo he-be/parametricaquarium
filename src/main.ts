@@ -6,6 +6,12 @@ interface Vector2 {
     y: number;
 }
 
+// 骨格ノード
+interface Node {
+    position: Vector2;
+    prevPosition: Vector2; // For PBD, though not used in this step
+}
+
 // 波紋オブジェクト
 interface Ripple {
     graphics: Graphics; // PixiJS Graphics object for drawing
@@ -16,6 +22,47 @@ interface Ripple {
     lineWidth: number;
     color: number;
 }
+
+// 魚クラス
+class Fish {
+    nodes: Node[] = [];
+    graphics: Graphics;
+    numNodes: number = 10; // 魚のノード数
+    nodeSpacing: number = 10; // ノード間の間隔
+
+    constructor(x: number, y: number) {
+        this.graphics = new Graphics();
+        // ノードを一直線に生成
+        for (let i = 0; i < this.numNodes; i++) {
+            this.nodes.push({
+                position: { x: x - i * this.nodeSpacing, y: y },
+                prevPosition: { x: x - i * this.nodeSpacing, y: y },
+            });
+        }
+    }
+
+    draw() {
+        this.graphics.clear();
+        // 魚の形状を仮で描画 (長方形)
+        // これは後でアウトライン生成ロジックに置き換えられる
+        const head = this.nodes[0].position;
+        const tail = this.nodes[this.nodes.length - 1].position;
+        const bodyWidth = 20; // 仮の魚の幅
+
+        this.graphics.beginFill(0x00FF00); // 緑色で魚の本体 (仮)
+        this.graphics.drawRect(tail.x, tail.y - bodyWidth / 2, head.x - tail.x, bodyWidth);
+        this.graphics.endFill();
+
+        // ノードの描画 (デバッグ用)
+        this.graphics.lineStyle(1, 0xFFFFFF); // 白い線
+        this.graphics.beginFill(0xFF0000); // 赤い点でノードを描画
+        for (const node of this.nodes) {
+            this.graphics.drawCircle(node.position.x, node.position.y, 3);
+        }
+        this.graphics.endFill();
+    }
+}
+
 
 // アプリケーションの初期化
 const app = new Application({
@@ -57,6 +104,10 @@ app.view.addEventListener('pointerdown', (event: PointerEvent) => {
     activeRipples.push(newRipple);
 });
 
+// 魚のインスタンスを作成
+const fish = new Fish(app.screen.width / 2, app.screen.height / 2);
+app.stage.addChild(fish.graphics);
+
 // メインループでの波紋の更新と描画
 app.ticker.add((delta) => {
     const currentTime = app.ticker.lastTime; // 現在の時間を取得
@@ -81,4 +132,7 @@ app.ticker.add((delta) => {
         ripple.graphics.lineStyle(ripple.lineWidth, ripple.color, alpha);
         ripple.graphics.drawCircle(ripple.origin.x, ripple.origin.y, currentRadius);
     }
+
+    // 魚の描画
+    fish.draw();
 });
