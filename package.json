@@ -13,7 +13,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "lint": "eslint . --ext .ts --fix",
+    "lint": "eslint . --fix",
     "typecheck": "tsc --noEmit",
     "precommit": "npm run lint && npm run typecheck && npm run test"
   },
