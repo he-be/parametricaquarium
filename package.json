@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Fullstack TypeScript project with optimized CI/CD",
   "main": "dist/index.js",
+  "type": "module",
   "scripts": {
     "build": "tsc",
     "build:worker": "tsc src/worker.ts --outDir dist --target ES2022 --moduleResolution bundler --allowSyntheticDefaultImports",
